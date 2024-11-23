@@ -1,27 +1,25 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Load saved preference
-    chrome.storage.sync.get('selectedCurrency', function(data) {
-      const currency = data.selectedCurrency || 'USD';
-      document.querySelector(`input[value="${currency}"]`).checked = true;
-    });
-  
-    // Add change handlers for radio buttons
-    document.querySelectorAll('input[name="currency"]').forEach(radio => {
-      radio.addEventListener('change', function(event) {
-        const selectedCurrency = event.target.value;
-        
-        // Save preference
-        chrome.storage.sync.set({
-          selectedCurrency: selectedCurrency
-        }, function() {
-            console.log('Currency preference saved:', selectedCurrency);
-
-            // Notify the background script
-            chrome.runtime.sendMessage({
-            type: 'CURRENCY_CHANGED',
-            currency: selectedCurrency
-          });
-        });
-      });
-    });
+  chrome.storage.local.get(['savedListing'], function(result) {
+    const listing = result.savedListing;
+    if (listing) {
+      const html = `
+        <div class="listing-card">
+          ${listing.image ? `<img class="listing-image" src="${listing.image}" alt="Property">` : ''}
+          <h3>${listing.title || 'No title available'}</h3>
+          <div class="price">${listing.price || 'Price not available'}</div>
+          <p>${listing.location || 'Location not available'}</p>
+          <div class="details">
+            <p>🛏️ Bedrooms: ${listing.bedrooms || 'N/A'}</p>
+            <p>🚿 Bathrooms: ${listing.bathrooms || 'N/A'}</p>
+            <p>📏 Size: ${listing.size || 'N/A'}</p>
+            <p>📍 Neighborhood: ${listing.neighborhood || 'N/A'}</p>
+          </div>
+          <p>${listing.description || 'No description available'}</p>
+        </div>
+      `;
+      document.getElementById('listing').innerHTML = html;
+    } else {
+      document.getElementById('listing').innerHTML = 'No listing saved yet. Visit a property page first.';
+    }
   });
+});

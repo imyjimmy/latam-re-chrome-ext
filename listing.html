@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Saved Listing</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .listing-card {
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px;
+    }
+    .listing-image {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+    .price {
+      color: #27ae60;
+      font-size: 1.4em;
+      font-weight: bold;
+      margin: 15px 0;
+    }
+    .details {
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid #eee;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+    }
+    .detail-item {
+      background: #f8f9fa;
+      padding: 10px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div id="listing"></div>
+  <script src="listing.js"></script>
+</body>
+</html>
