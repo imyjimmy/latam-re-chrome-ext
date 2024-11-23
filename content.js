@@ -68,7 +68,7 @@ function findPriceContainer(node) {
     current = parent;
     levelsUp++;
   }
-  return current.parentElement;
+  return node.parentElement;
 }
 
 function isCOPAmount(text) {
@@ -136,10 +136,6 @@ function highlightExistingUSDPrice(container) {
 
 function processTextNode(node) {
   const text = node.textContent;
-  if (text === " $165,000,000 ") {
-    console.log('process text node: ', text) // COP $770,000
-    console.log('isCOPAmount: ', isCOPAmount(text))
-  }
 
   if (!isCOPAmount(text)) return;
   const copAmount = parseCOPAmount(text);
