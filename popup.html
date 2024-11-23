@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    <title>Currency Selector</title>
+    <meta charset="UTF-8">
+    <style>
+        body {
+        width: 200px;
+        padding: 15px;
+        font-family: Arial, sans-serif;
+        }
+        h1 {
+        font-size: 16px;
+        margin-bottom: 15px;
+        color: #333;
+        }
+        .radio-group {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        }
+        .radio-item {
+        display: flex;
+        align-items: center;
+        padding: 8px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        }
+        .radio-item:hover {
+        background-color: #f5f5f5;
+        }
+        .radio-item input[type="radio"] {
+        margin-right: 10px;
+        }
+        .radio-item label {
+        cursor: pointer;
+        user-select: none;
+        }
+        .currency-symbol {
+        font-weight: bold;
+        margin-left: 4px;
+        color: #666;
+        }
+    </style>
+    </head>
+    <body>
+    <h1>Select Currency</h1>
+    <div class="radio-group">
+        <div class="radio-item">
+        <input type="radio" id="usd" name="currency" value="USD">
+        <label for="usd">US Dollar <span class="currency-symbol">($)</span></label>
+        </div>
+        <div class="radio-item">
+        <input type="radio" id="btc" name="currency" value="BTC">
+        <label for="btc">Bitcoin <span class="currency-symbol">(&#8383;)</span></label>
+        </div>
+    </div>
+    <script src="popup.js"></script>
+    </body>
+</html>

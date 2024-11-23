@@ -41,7 +41,7 @@ async function getExchangeRate() {
 	}
 	
 	// Fetch new rate if cache is empty or expired
-	return await fetchExchangeRate();
+	return await fetchExchangeRate(BASE_CURRENCY);
 }
 
 // Listen for requests from content script
@@ -59,6 +59,43 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 		return true; // Required for async response
 	}
 });
+
+// Listen for installation or update
+chrome.runtime.onInstalled.addListener(() => {
+	// Set default currency
+	chrome.storage.sync.get('selectedCurrency', function(data) {
+		if (!data.selectedCurrency) {
+			chrome.storage.sync.set({
+				selectedCurrency: 'USD'
+			});
+		}
+	});
+});
+
+// Listen for messages from popup
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+	if (message.type === 'CURRENCY_CHANGED') {
+		console.log('Background script received currency change:', message.currency);
+		
+		// Here you can add any background processing needed
+		// For example, updating badge text
+		chrome.action.setBadgeText({ text: message.currency });
+		
+		// Or trigger other background operations
+		updateCurrencySettings(message.currency);
+	}
+});
+
+function updateCurrencySettings(currency) {
+	// Example function to handle currency updates
+	// This could include:
+	// - Updating extension state
+	// - Making API calls
+	// - Updating extension badge or icon
+	// - Triggering notifications
+	console.log('Updating currency settings to:', currency);
+  BASE_CURRENCY = currency
+}
 
 // Fetch rate when extension loads
 fetchExchangeRate();

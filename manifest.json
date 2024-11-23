@@ -4,6 +4,9 @@
     "version": "1.0",
     "description": "Automatically converts local currencies (Colombian Peso COP for now) to USD",
     "permissions": ["activeTab", "scripting", "storage"],
+    "action": {
+        "default_popup": "popup.html"
+    },
     "content_scripts": [{
         "matches": [
             "*://*.casacol.co/*",
