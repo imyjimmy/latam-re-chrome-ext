@@ -1,0 +1,18 @@
+{
+    "manifest_version": 3,
+    "name": "LATAM Real Estate Chrome Extension",
+    "version": "1.0",
+    "description": "Automatically converts local currencies (Colombian Peso COP for now) to USD",
+    "permissions": ["activeTab", "scripting"],
+    "content_scripts": [{
+        "matches": [
+            "*://*.casacol.co/*",
+            "*://primaverarealtymedellin.com/*",
+            "*://www.realtor.com/international/co/*"
+        ],
+        "js": [
+            "areaUtils.js",
+            "content.js"
+        ]
+    }]
+}
