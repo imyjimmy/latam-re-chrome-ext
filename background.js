@@ -41,7 +41,7 @@ async function getExchangeRate() {
 	}
 	
 	// Fetch new rate if cache is empty or expired
-	return await fetchExchangeRate(BASE_CURRENCY);
+	return await fetchExchangeRate();
 }
 
 // Listen for requests from content script
@@ -94,7 +94,7 @@ function updateCurrencySettings(currency) {
 	// - Updating extension badge or icon
 	// - Triggering notifications
 	console.log('Updating currency settings to:', currency);
-  BASE_CURRENCY = currency
+//   BASE_CURRENCY = currency
 }
 
 // Fetch rate when extension loads

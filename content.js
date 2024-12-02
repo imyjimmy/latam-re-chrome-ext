@@ -78,7 +78,10 @@ function isCOPAmount(text) {
     text.toLowerCase().includes(indicator)
   );
 
-  if (isUSD) {
+  const sqFtIndicator = ['sq ft'];
+  const isSqFt = sqFtIndicator.some(indicator => text.toLowerCase().includes(indicator));
+
+  if (isUSD || isSqFt) {
     return false;
   }
 
@@ -112,9 +115,7 @@ function isCOPAmount(text) {
   const colombianFormat = /(?:^\$?\s*|\s+)\d{1,3}(?:\.\d{3}){1,3}(?!\d)/;
   const internationalFormat = /(?:^\$?\s*|\s+)\d{1,3}(?:,\d{3}){1,3}(?!\d)/;
 
-  const isCOP = (hasIndicator || colombianFormat.test(text) || internationalFormat.test(text));
-  
-  return isCOP;
+  return hasIndicator && (colombianFormat.test(text) || internationalFormat.test(text));
 }
 
 // function hasExistingUSDPrice(container) {
@@ -137,9 +138,9 @@ function highlightExistingUSDPrice(container) {
 function processTextNode(node) {
   const text = node.textContent;
 
+  console.log('copamt: ', text, isCOPAmount(text), parseCOPAmount(text))
   if (!isCOPAmount(text)) return;
   const copAmount = parseCOPAmount(text);
-  console.log('copamt: ', text, isCOPAmount(text), copAmount)
   if (!copAmount) return;
 
   // Find the price container
@@ -171,8 +172,8 @@ function processTextNode(node) {
 }
 
 function traverseDOM(node) {
-  // console.log('currentURL: ', currentUrl);
   if (node.nodeType === Node.TEXT_NODE) {
+    console.log('node:', node)
     processTextNode(node);
     return;
   }
@@ -187,12 +188,73 @@ function traverseDOM(node) {
   }
 }
 
+// claude dec 2, 2024
+// primaverarealty
+// Usage example:
+// const price = extractListingPrice(document.body);
+// console.log(price);
+// Output: {
+//   symbol: "COP",
+//   value: "1,000,000,000",
+//   numericValue: 1000000000,
+//   currency: "COP",
+//   raw: "COP 1,000,000,000"
+// }
+function convertListingPrices(rootNode) {
+  const priceContainers = rootNode.querySelectorAll('.wpsight-listing-price');
+  if (!priceContainers.length) return [];
+
+  return Array.from(priceContainers).map(container => {
+    const priceData = {
+      symbol: '',
+      formattedValue: '',
+      value: 0,
+      currency: '',
+      raw: ''
+    };
+    
+    priceData.raw = container.textContent.trim();
+
+    const symbolElement = container.querySelector('.listing-price-symbol');
+    if (symbolElement) {
+      priceData.symbol = symbolElement.textContent?.trim() || 
+                        symbolElement.innerText?.trim() || 
+                        symbolElement.innerHTML?.trim() || '';
+    }
+
+    const priceElement = container.querySelector('.listing-price-value');
+    if (priceElement) {
+      // Try multiple ways to get the formatted text
+      priceData.formattedValue = priceElement.childNodes[0]?.nodeValue?.trim() || 
+                                priceElement.innerHTML?.trim() ||
+                                priceElement.innerText?.trim() ||
+                                '';
+                                
+      // Get the numeric value from the content attribute
+      priceData.value = parseFloat(priceElement.getAttribute('content') || '0');
+    }
+
+    const currencyMeta = container.querySelector('meta[itemprop="priceCurrency"]');
+    if (currencyMeta) {
+      priceData.currency = currencyMeta.getAttribute('content') || '';
+    }
+
+    let usdAmount = convertCOPtoUSD(priceData.value);
+    container.appendChild(createUSDElement(usdAmount));
+    return priceData;
+  });
+}
+
 (async function() {
   await initializeExchangeRate();
 
+  console.log('currentURL: ', currentUrl);
   // Initial conversion
-  traverseDOM(document.body);
-
+  //traverseDOM(document.body);
+  
+  let priceData = extractListingPrices(document.body);
+  console.log(priceData);
+  
   // Watch for dynamic content changes
   const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
