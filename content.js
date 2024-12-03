@@ -135,59 +135,6 @@ function highlightExistingUSDPrice(container) {
   // }
 }
 
-function processTextNode(node) {
-  const text = node.textContent;
-
-  // console.log('copamt: ', text, isCOPAmount(text), parseCOPAmount(text))
-  if (!isCOPAmount(text)) return;
-  const copAmount = parseCOPAmount(text);
-  if (!copAmount) return;
-
-  // Find the price container
-  const container = findPriceContainer(node);
-  // console.log('container:', container)
-  if (!container) { 
-    console.log('price container not found'); // should never get here
-  }
-
-  // instead of price container check sibling DOMs for prices
-
-  // First check if there's an existing USD price
-  // if (hasExistingUSDPrice(container)) {
-  //     highlightExistingUSDPrice(container);
-  //     return;
-  // }
-
-  // Only proceed with conversion if there's no existing USD price
-  const usdAmount = convertCOPtoUSD(copAmount);
-  console.log('usdAmt:', usdAmount);
-  if (usdAmount >= 1) {
-    // Check if conversion already exists
-    console.log('container:', container)
-    if (container.querySelector('.cop-usd-conversion')) { console.log('existing .cop-usd-conversion'); return };
-
-    // Add the conversion as the last child of the container
-    container.appendChild(createUSDElement(usdAmount));
-  }
-}
-
-function traverseDOM(node) {
-  if (node.nodeType === Node.TEXT_NODE) {
-    // console.log('node:', node)
-    processTextNode(node);
-    return;
-  }
-  
-  if (node.tagName === 'SPAN' && node.classList.contains('cop-usd-conversion')) {
-    console.log('cop-usd-conversion found, return')
-    return;
-  }
-
-  for (const child of node.childNodes) {
-    traverseDOM(child);
-  }
-}
-
 // claude dec 2, 2024
 // primaverarealty
 function convertListingPrices(rootNode) {
@@ -237,7 +184,9 @@ function convertListingPrices(rootNode) {
 
 // substitute listing prices for following sites
 const listingPriceFn = {
-  'primaverarealtymedellin': (rootNode) => {
+  'primaverarealtymedellin': (rootNode, pageType = 'LISTINGS') => {
+    console.log('pageType:', pageType);
+
     const priceContainers = rootNode.querySelectorAll('.wpsight-listing-price');
     if (!priceContainers.length) return [];
 
@@ -281,7 +230,9 @@ const listingPriceFn = {
       return priceData;
     });
   },
-  'casacol': (rootNode) => {
+  'casacol': (rootNode, pageType = 'LISTINGS') => {
+    console.log('pageType:', pageType);
+
     const priceContainers = rootNode.querySelectorAll('.component__content--default');
     if (!priceContainers.length) return [];
   
@@ -322,6 +273,22 @@ const listingPriceFn = {
   }
 }
 
+/* A page either has listings or is the individual property page */
+const pageTypeFn = { 
+  'primaverarealtymedellin': (pathName) => { 
+    // pathName === 'property' ? 'PROPERTY': 'LISTINGS'
+    switch (pathName) {
+      case 'property':
+        return 'PROPERTY'
+      case '':
+        return 'HOME'
+      default:
+        return 'LISTINGS'
+    }
+  },
+  'casacol': (pathName) => pathName === 'properties' ? 'PROPERTY' : 'LISTINGS'
+}
+
 function getBaseURL(url) {
   //return url.split("//")[1].split(".com")[0];
   return url.replace(/^https?:\/\//, '')  // Remove protocol
@@ -330,16 +297,25 @@ function getBaseURL(url) {
           .slice(-2)[0];
 }
 
+function getUrlProperties(url) {
+  let splitUrl = url.replace(/^https?:\/\//, '').split('/')
+
+  return { 
+    baseUrl: splitUrl[0].split('.').slice(-2)[0], 
+    pathName: splitUrl[1], // properties or property
+  }
+}
+
 (async function() {
   await initializeExchangeRate();
 
-  let baseUrl = getBaseURL(currentUrl)
+  let { baseUrl, pathName } = getUrlProperties(currentUrl)
   
-  // Initial conversion
-  //traverseDOM(document.body);
   console.log('Base Url:', baseUrl);
+
+  let pageType = pageTypeFn[baseUrl](pathName);
   const priceFn = listingPriceFn[baseUrl];
-  let priceData = priceFn(document.body);
+  let priceData = priceFn(document.body, pageType);
   console.log(priceData);
   
   // Watch for dynamic content changes
@@ -347,7 +323,7 @@ function getBaseURL(url) {
     mutations.forEach((mutation) => {
       mutation.addedNodes.forEach((node) => {
         if (node.nodeType === Node.ELEMENT_NODE) {
-          priceFn(node);
+          priceFn(node, pageType);
         }
       });
     });
