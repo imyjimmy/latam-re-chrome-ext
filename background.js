@@ -1,6 +1,15 @@
 const EXCHANGE_API_KEY = '2a6acba9e0132a19904dc0c2'; // Get from https://www.exchangerate-api.com/
 const CACHE_DURATION = 86400000; // 24 hours in milliseconds
 const DEFAULT_RATE = 4360; // Fallback rate if API fails
+const BASE_CURRENCY = 'COP';
+
+// no access to urls in background.js without tabs permission
+// let currentUrl = document.URL; // 
+
+// const baseCurrencyForBaseURL = {
+//   'primaverarealtymedellin': 'COP',
+//   'casacol': 'COP',
+// }
 
 async function fetchExchangeRate() {
 	try {
@@ -94,7 +103,7 @@ function updateCurrencySettings(currency) {
 	// - Updating extension badge or icon
 	// - Triggering notifications
 	console.log('Updating currency settings to:', currency);
-//   BASE_CURRENCY = currency
+	//   BASE_CURRENCY = currency
 }
 
 // Fetch rate when extension loads
