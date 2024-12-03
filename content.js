@@ -330,6 +330,41 @@ function getBaseURL(url) {
           .slice(-2)[0];
 }
 
+document.addEventListener('click', function(event) {
+  // Check if clicked element or its parent is the target button
+  const button = event.target.closest('.vc_btn3-color-nobg-theme');
+  
+  if (button && button.querySelector('.svg-icon')) {
+    // Get property information
+    const propertyCard = button.closest('.property-card');
+    const propertyInfo = propertyCard ? {
+      title: propertyCard.querySelector('.property-title')?.textContent,
+      price: propertyCard.querySelector('.property-price')?.textContent,
+      url: window.location.href
+    } : { url: window.location.href };
+
+    // Store favorite in extension storage
+    chrome.storage.local.set({
+      [`favorite_${Date.now()}`]: {
+        ...propertyInfo,
+        timestamp: new Date().toISOString()
+      }
+    });
+
+    // Visual feedback
+    const svg = button.querySelector('.svg-icon');
+    svg.style.fill = svg.style.fill === 'red' ? '' : 'red';
+    
+    // Optional: Send to your backend
+    // fetch('your-api-endpoint', {
+    //   method: 'POST',
+    //   body: JSON.stringify(propertyInfo)
+    // });
+
+    console.log('Casacol heart button clicked:', propertyInfo);
+  }
+});
+
 (async function() {
   await initializeExchangeRate();
 
