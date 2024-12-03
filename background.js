@@ -1,6 +1,12 @@
 const EXCHANGE_API_KEY = '2a6acba9e0132a19904dc0c2'; // Get from https://www.exchangerate-api.com/
 const CACHE_DURATION = 86400000; // 24 hours in milliseconds
 const DEFAULT_RATE = 4360; // Fallback rate if API fails
+
+const DEFAULT_RATES = {
+  'USD': 4360,
+  'BTC': 0.000024
+};
+
 const BASE_CURRENCY = 'COP';
 
 // no access to urls in background.js without tabs permission
@@ -11,8 +17,8 @@ const BASE_CURRENCY = 'COP';
 //   'casacol': 'COP',
 // }
 
-async function fetchExchangeRate() {
-	try {
+async function fetchUsdCopRate() {
+  try {
 		const response = await fetch(
 			`https://v6.exchangerate-api.com/v6/${EXCHANGE_API_KEY}/pair/USD/COP`
 		);
@@ -24,7 +30,7 @@ async function fetchExchangeRate() {
 			
 			// Store in Chrome's storage
 			chrome.storage.local.set({
-				exchangeRate: {
+				exchangeRate_USD: {
 					rate: rate,
 					timestamp: timestamp
 				}
@@ -40,10 +46,39 @@ async function fetchExchangeRate() {
 	return DEFAULT_RATE;
 }
 
-async function getExchangeRate() {
+async function fetchBtcUsdRate() {
+  try {
+    const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
+    const data = await response.json();
+    return data.bitcoin?.usd || DEFAULT_RATES.BTC;
+  } catch (error) {
+    console.error('Error fetching BTC/USD rate:', error);
+    return DEFAULT_RATES.BTC;
+  }
+}
+
+async function fetchExchangeRate(targetCurrency = 'USD') {
+	const usdCopRate = await fetchUsdCopRate();
+
+  if (targetCurrency === 'BTC') {
+    const btcUsdRate = await fetchBtcUsdRate();
+    const rate = 1 / (btcUsdRate * usdCopRate);
+    const timestamp = Date.now();
+    
+    chrome.storage.local.set({
+      [`exchangeRate_BTC`]: { rate, timestamp }
+    });
+    
+    return rate;
+  }
+
+  return usdCopRate;
+}
+
+async function getExchangeRate(currency = 'USD') {
 	// Check storage for cached rate
-	const data = await chrome.storage.local.get('exchangeRate');
-	const cached = data.exchangeRate;
+	const data = await chrome.storage.local.get(`exchangeRate_${currency}`);
+	const cached = data[`exchangeRate_${currency}`];
 	
 	if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
 		return cached.rate;
@@ -81,6 +116,26 @@ chrome.runtime.onInstalled.addListener(() => {
 	});
 });
 
+/* Listen for messages from popup */
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'getExchangeRate') {
+    chrome.storage.sync.get('selectedCurrency', async function(data) {
+      const currency = data.selectedCurrency || 'USD';
+      const rate = await getExchangeRate(currency);
+      sendResponse({ rate, currency });
+    });
+    return true;
+  }
+});
+
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.storage.sync.get('selectedCurrency', function(data) {
+    if (!data.selectedCurrency) {
+      chrome.storage.sync.set({ selectedCurrency: 'USD' });
+    }
+  });
+});
+
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 	if (message.type === 'CURRENCY_CHANGED') {
@@ -90,8 +145,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 		// For example, updating badge text
 		chrome.action.setBadgeText({ text: message.currency });
 		
+    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+      chrome.tabs.sendMessage(tabs[0].id, { type: 'CURRENCY_CHANGED', currency: message.currency });
+    });
+
 		// Or trigger other background operations
-		updateCurrencySettings(message.currency);
+		//updateCurrencySettings(message.currency);
+    fetchExchangeRate(message.currency);
 	}
 });
 
@@ -107,4 +167,4 @@ function updateCurrencySettings(currency) {
 }
 
 // Fetch rate when extension loads
-fetchExchangeRate();
+fetchExchangeRate('USD');

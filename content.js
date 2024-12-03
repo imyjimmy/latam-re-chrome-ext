@@ -3,15 +3,25 @@ let currentUrl = document.URL; //
 // content.js
 let currentExchangeRate = null;
 
-async function initializeExchangeRate() {
+/* initial exchange rate fetching */
+async function getExchangeRate() {
   try {
     const response = await chrome.runtime.sendMessage({ action: 'getExchangeRate' });
+    console.log('EXCHANGE RATE: ', response.rate);
     currentExchangeRate = response.rate;
   } catch (error) {
     console.error('Error getting exchange rate:', error);
     currentExchangeRate = 4360; // Fallback to default rate
   }
 }
+
+// Listen for currency changes from popup/background
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === 'CURRENCY_CHANGED') {
+    console.log('CONTENT.JS: currency changed')
+    getExchangeRate(); // Fetch new rate when currency changes
+  }
+});
 
 function formatUSD(amount) {
   return new Intl.NumberFormat('en-US', {
@@ -307,7 +317,7 @@ function getUrlProperties(url) {
 }
 
 (async function() {
-  await initializeExchangeRate();
+  await getExchangeRate();
 
   let { baseUrl, pathName } = getUrlProperties(currentUrl)
   
