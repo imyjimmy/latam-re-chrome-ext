@@ -3,12 +3,16 @@ let currentUrl = document.URL; //
 // content.js
 let currentExchangeRate = null;
 
+let pageType = null;
+let priceFn = null;
+
 /* initial exchange rate fetching */
 async function getExchangeRate() {
   try {
     const response = await chrome.runtime.sendMessage({ action: 'getExchangeRate' });
     console.log('EXCHANGE RATE: ', response.rate);
     currentExchangeRate = response.rate;
+    return response.rate
   } catch (error) {
     console.error('Error getting exchange rate:', error);
     currentExchangeRate = 4360; // Fallback to default rate
@@ -19,7 +23,11 @@ async function getExchangeRate() {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'CURRENCY_CHANGED') {
     console.log('CONTENT.JS: currency changed')
-    getExchangeRate(); // Fetch new rate when currency changes
+    getExchangeRate().then(res => {
+      console.log('res: ', res)
+      priceFn(document.body, pageType);
+    }); // Fetch new rate when currency changes
+    console.log('exchange rate: ', currentExchangeRate)
   }
 });
 
@@ -61,25 +69,25 @@ function createUSDElement(usdAmount) {
   return span;
 }
 
-function findPriceContainer(node) {
-  // Walk up the DOM tree to find a container that has both price and currency
-  let current = node;
-  let levelsUp = 0;
-  const MAX_LEVELS = 3;
+// function findPriceContainer(node) {
+//   // Walk up the DOM tree to find a container that has both price and currency
+//   let current = node;
+//   let levelsUp = 0;
+//   const MAX_LEVELS = 3;
 
-  while (current && current.parentElement && levelsUp < MAX_LEVELS) {
-    const parent = current.parentElement;
-    const text = parent.textContent.toLowerCase();
+//   while (current && current.parentElement && levelsUp < MAX_LEVELS) {
+//     const parent = current.parentElement;
+//     const text = parent.textContent.toLowerCase();
     
-    // Check if parent contains both a number and currency indicator
-    if (text.match(/\d/) && (text.includes('cop') || text.includes('peso'))) {
-      return parent;
-    }
-    current = parent;
-    levelsUp++;
-  }
-  return node.parentElement;
-}
+//     // Check if parent contains both a number and currency indicator
+//     if (text.match(/\d/) && (text.includes('cop') || text.includes('peso'))) {
+//       return parent;
+//     }
+//     current = parent;
+//     levelsUp++;
+//   }
+//   return node.parentElement;
+// }
 
 function isCOPAmount(text) {
   // First check if it's USD
@@ -323,8 +331,8 @@ function getUrlProperties(url) {
   
   console.log('Base Url:', baseUrl);
 
-  let pageType = pageTypeFn[baseUrl](pathName);
-  const priceFn = listingPriceFn[baseUrl];
+  pageType = pageTypeFn[baseUrl](pathName);
+  priceFn = listingPriceFn[baseUrl];
   let priceData = priceFn(document.body, pageType);
   console.log(priceData);
   

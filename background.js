@@ -4,7 +4,7 @@ const DEFAULT_RATE = 4360; // Fallback rate if API fails
 
 const DEFAULT_RATES = {
   'USD': 4360,
-  'BTC': 0.000024
+  'BTC': 96022,
 };
 
 const BASE_CURRENCY = 'COP';
@@ -62,7 +62,14 @@ async function fetchExchangeRate(targetCurrency = 'USD') {
 
   if (targetCurrency === 'BTC') {
     const btcUsdRate = await fetchBtcUsdRate();
-    const rate = 1 / (btcUsdRate * usdCopRate);
+    const rate = btcUsdRate * usdCopRate; 
+    /* 
+     96,000 usd / btc * 4360 cop / usd
+    usd   cop
+    --- * ---
+    btc   usd =  cop / btc
+    therefore 1 / (cop/btc) = btc / cop
+    */
     const timestamp = Date.now();
     
     chrome.storage.local.set({
@@ -76,6 +83,7 @@ async function fetchExchangeRate(targetCurrency = 'USD') {
 }
 
 async function getExchangeRate(currency = 'USD') {
+  console.log('BG, getExchangeRate: ', currency);
 	// Check storage for cached rate
 	const data = await chrome.storage.local.get(`exchangeRate_${currency}`);
 	const cached = data[`exchangeRate_${currency}`];
@@ -87,22 +95,6 @@ async function getExchangeRate(currency = 'USD') {
 	// Fetch new rate if cache is empty or expired
 	return await fetchExchangeRate();
 }
-
-// Listen for requests from content script
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-	if (request.action === 'getExchangeRate') {
-		getExchangeRate().then(rate => sendResponse({ rate: rate }));
-		return true; // Required for async response
-	}
-});
-
-// Listen for requests from content script
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-	if (request.action === 'getExchangeRate') {
-		getExchangeRate().then(rate => sendResponse({ rate: rate }));
-		return true; // Required for async response
-	}
-});
 
 // Listen for installation or update
 chrome.runtime.onInstalled.addListener(() => {
@@ -145,6 +137,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 		// For example, updating badge text
 		chrome.action.setBadgeText({ text: message.currency });
 		
+    chrome.storage.sync.set({ selectedCurrency: message.currency });
+
     chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
       chrome.tabs.sendMessage(tabs[0].id, { type: 'CURRENCY_CHANGED', currency: message.currency });
     });
