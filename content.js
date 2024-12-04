@@ -1,10 +1,11 @@
 let currentUrl = document.URL; // 
 
-// content.js
 let currentExchangeRate = null;
-
 let pageType = null;
 let priceFn = null;
+
+// util.js
+let convertArea = null;
 
 /* initial exchange rate fetching */
 async function getExchangeRate() {
@@ -69,25 +70,6 @@ function createUSDElement(usdAmount) {
   return span;
 }
 
-// function findPriceContainer(node) {
-//   // Walk up the DOM tree to find a container that has both price and currency
-//   let current = node;
-//   let levelsUp = 0;
-//   const MAX_LEVELS = 3;
-
-//   while (current && current.parentElement && levelsUp < MAX_LEVELS) {
-//     const parent = current.parentElement;
-//     const text = parent.textContent.toLowerCase();
-    
-//     // Check if parent contains both a number and currency indicator
-//     if (text.match(/\d/) && (text.includes('cop') || text.includes('peso'))) {
-//       return parent;
-//     }
-//     current = parent;
-//     levelsUp++;
-//   }
-//   return node.parentElement;
-// }
 
 function isCOPAmount(text) {
   // First check if it's USD
@@ -136,13 +118,6 @@ function isCOPAmount(text) {
   return hasIndicator && (colombianFormat.test(text) || internationalFormat.test(text));
 }
 
-// function hasExistingUSDPrice(container) {
-  // Look for elements containing USD prices
-  // console.log('USD container: ', container);
-  // const usdElement = container.querySelector('.displayConsumerPrice');
-  // return usdElement && usdElement.textContent.includes('USD');
-// }
-
 /** optionally turn this off--use our own conversion rate */
 function highlightExistingUSDPrice(container) {
   // const usdElement = container.querySelector('.displayConsumerPrice');
@@ -153,57 +128,17 @@ function highlightExistingUSDPrice(container) {
   // }
 }
 
-// claude dec 2, 2024
-// primaverarealty
-function convertListingPrices(rootNode) {
-  const priceContainers = rootNode.querySelectorAll('.wpsight-listing-price');
-  if (!priceContainers.length) return [];
-
-  return Array.from(priceContainers).map(container => {
-    const priceData = {
-      symbol: '',
-      formattedValue: '',
-      value: 0,
-      currency: '',
-      raw: ''
-    };
-    
-    priceData.raw = container.textContent.trim();
-
-    const symbolElement = container.querySelector('.listing-price-symbol');
-    if (symbolElement) {
-      priceData.symbol = symbolElement.textContent?.trim() || 
-                        symbolElement.innerText?.trim() || 
-                        symbolElement.innerHTML?.trim() || '';
-    }
-
-    const priceElement = container.querySelector('.listing-price-value');
-    if (priceElement) {
-      // Try multiple ways to get the formatted text
-      priceData.formattedValue = priceElement.childNodes[0]?.nodeValue?.trim() || 
-                                priceElement.innerHTML?.trim() ||
-                                priceElement.innerText?.trim() ||
-                                '';
-                                
-      // Get the numeric value from the content attribute
-      priceData.value = parseFloat(priceElement.getAttribute('content') || '0');
-    }
-
-    const currencyMeta = container.querySelector('meta[itemprop="priceCurrency"]');
-    if (currencyMeta) {
-      priceData.currency = currencyMeta.getAttribute('content') || '';
-    }
-
-    let usdAmount = convertCOPtoUSD(priceData.value);
-    container.appendChild(createUSDElement(usdAmount));
-    return priceData;
-  });
-}
-
 // substitute listing prices for following sites
 const listingPriceFn = {
   'primaverarealtymedellin': (rootNode, pageType = 'LISTINGS') => {
-    console.log('pageType:', pageType);
+    console.log('PRIMAVERA, pageType:', pageType);
+
+    // TEST UTILS FN
+    // convertArea = areaUtils.convertArea;
+    // console.log('sq area test')
+    // const areaInSqMeters = 100;
+    // const areaInSqFeet = convertArea(areaInSqMeters);
+    // console.log(`${areaInSqMeters} sq meters = ${areaInSqFeet} sq feet`);
 
     const priceContainers = rootNode.querySelectorAll('.wpsight-listing-price');
     if (!priceContainers.length) return [];
@@ -351,4 +286,15 @@ function getUrlProperties(url) {
     childList: true,
     subtree: true
   });
+})();
+
+// testing use of fn in utils.js
+(() => {
+  // document.addEventListener('DOMContentLoaded', () => {
+    // convertArea = areaUtils.convertArea;
+    // console.log('DOMCONTENTLOADED')
+    // const areaInSqMeters = 100;
+    // const areaInSqFeet = convertArea(areaInSqMeters);
+    // console.log(`${areaInSqMeters} sq meters = ${areaInSqFeet} sq feet`);
+  // });
 })();
