@@ -1,8 +1,9 @@
 let currentUrl = document.URL; // 
+let pageType = null; // these will be determined by the url
+let priceFn = null;
 
 let currentExchangeRate = null;
-let pageType = null;
-let priceFn = null;
+let currency = null;
 
 // util.js
 let convertArea = null;
@@ -11,8 +12,9 @@ let convertArea = null;
 async function getExchangeRate() {
   try {
     const response = await chrome.runtime.sendMessage({ action: 'getExchangeRate' });
-    console.log('EXCHANGE RATE: ', response.rate);
+    console.log('EXCHANGE RATE: ', response);
     currentExchangeRate = response.rate;
+    currency = response.currency;
     return response.rate
   } catch (error) {
     console.error('Error getting exchange rate:', error);
@@ -23,9 +25,7 @@ async function getExchangeRate() {
 // Listen for currency changes from popup/background
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'CURRENCY_CHANGED') {
-    console.log('CONTENT.JS: currency changed')
     getExchangeRate().then(res => {
-      console.log('res: ', res)
       priceFn(document.body, pageType);
     }); // Fetch new rate when currency changes
     console.log('exchange rate: ', currentExchangeRate)
@@ -41,24 +41,21 @@ function formatUSD(amount) {
   }).format(amount);
 }
 
-function parseCOPAmount(text) {
-  let cleanText = text.replace(/[^0-9.,]/g, '')
-    .trim();
-
-  if (cleanText.includes('.') && !cleanText.includes(',')) {
-    cleanText = cleanText.replace(/\./g, '');
-  }
-  
-  if (cleanText.includes(',')) {
-    cleanText = cleanText.replace(/,/g, '');
-  }
-
-  const amount = parseFloat(cleanText);
-  return isNaN(amount) ? null : amount;
+function convertCOPtoBTC(copAmt) {
+  return (copAmt / currentExchangeRate).toFixed(3);
 }
 
 function convertCOPtoUSD(copAmount) {
   return Math.round(copAmount / currentExchangeRate);
+}
+
+function createBTCElement(btcAmt) {
+  const span = document.createElement('span');
+  span.textContent = ` (${btcAmt} BTC)`;
+  span.style.color = '#F7931A';
+  span.style.fontWeight = 'bold';
+  span.className = 'cop-btc-conversion';
+  return span;
 }
 
 function createUSDElement(usdAmount) {
@@ -70,6 +67,21 @@ function createUSDElement(usdAmount) {
   return span;
 }
 
+function DOMConvertCurrency(container, priceData) {
+  if (currency === 'USD') { 
+    let usdAmount = convertCOPtoUSD(priceData.value);
+    parseUtils.removeSpans(container, 'cop-btc-conversion')
+    if (container.querySelector('.cop-usd-conversion') === null) {
+      container.appendChild(createUSDElement(usdAmount));
+    }
+  } else if (currency === 'BTC') {
+    let btcAmt = convertCOPtoBTC(priceData.value);
+    parseUtils.removeSpans(container, 'cop-usd-conversion')
+    if (container.querySelector('.cop-btc-conversion') === null) {
+      container.appendChild(createBTCElement(btcAmt))
+    }
+  }
+}
 
 function isCOPAmount(text) {
   // First check if it's USD
@@ -131,7 +143,7 @@ function highlightExistingUSDPrice(container) {
 // substitute listing prices for following sites
 const listingPriceFn = {
   'primaverarealtymedellin': (rootNode, pageType = 'LISTINGS') => {
-    console.log('PRIMAVERA, pageType:', pageType);
+    console.log('PRIMAVERA, pageType:', pageType, 'currency: ', currency);
 
     // TEST UTILS FN
     // convertArea = areaUtils.convertArea;
@@ -178,8 +190,8 @@ const listingPriceFn = {
         priceData.currency = currencyMeta.getAttribute('content') || '';
       }
 
-      let usdAmount = convertCOPtoUSD(priceData.value);
-      container.appendChild(createUSDElement(usdAmount));
+      DOMConvertCurrency(container, priceData)
+      
       return priceData;
     });
   },
@@ -216,11 +228,16 @@ const listingPriceFn = {
         }
       }
   
-      let usdAmount = convertCOPtoUSD(priceData.value);
+      // let usdAmount = convertCOPtoUSD(priceData.value);
 
-      if (container.querySelector('.cop-usd-conversion') === null) {
-        container.appendChild(createUSDElement(usdAmount));
-      }
+      // if (container.querySelector('.cop-usd-conversion') === null &&
+      //   container.querySelector('.cop-btc-converstion') === null
+      // ) {
+      // //   container.appendChild(createUSDElement(usdAmount));
+      //   console.log('casacol, convert currency!!')
+      DOMConvertCurrency(container, priceData);
+      // }
+
       return priceData;
     });
   }
