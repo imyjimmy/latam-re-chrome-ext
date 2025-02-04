@@ -240,6 +240,25 @@ const listingPriceFn = {
 
       return priceData;
     });
+  },
+  'nomadbarrio': (rootNode, pageType = 'LISTINGS') => {
+    console.log('nomadbarrio, pageType:', pageType);
+    const priceElements = Array.from(rootNode.querySelectorAll('.bubble-element.Text'))
+      .filter(el => {
+        const text = el.textContent.trim();
+        return text.startsWith('$') && !text.includes('US$') && !text.includes('(');
+      });
+
+    console.log('nomadbarrio priceelements: ', priceElements);
+
+    return priceElements.map(el => {
+      const text = el.textContent.trim();
+      return {
+        formattedValue: text,
+        value: parseFloat(text.replace(/[$,]/g, '')),
+        currency: 'COP'
+      };
+    });
   }
 }
 
@@ -256,7 +275,8 @@ const pageTypeFn = {
         return 'LISTINGS'
     }
   },
-  'casacol': (pathName) => pathName === 'properties' ? 'PROPERTY' : 'LISTINGS'
+  'casacol': (pathName) => pathName === 'properties' ? 'PROPERTY' : 'LISTINGS',
+  'nomadbarrio': (pathName) => 'LISTINGS',
 }
 
 function getBaseURL(url) {
@@ -284,6 +304,7 @@ function getUrlProperties(url) {
   console.log('Base Url:', baseUrl);
 
   pageType = pageTypeFn[baseUrl](pathName);
+  //console.log('loading listingPriceFn')
   priceFn = listingPriceFn[baseUrl];
   let priceData = priceFn(document.body, pageType);
   console.log(priceData);
@@ -291,11 +312,14 @@ function getUrlProperties(url) {
   // Watch for dynamic content changes
   const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
-      mutation.addedNodes.forEach((node) => {
-        if (node.nodeType === Node.ELEMENT_NODE) {
-          priceFn(node, pageType);
-        }
-      });
+      console.log('mutation detected: ', mutation.addedNodes)
+      // mutation.addedNodes.forEach((node) => {
+      //   if (node.nodeType === Node.ELEMENT_NODE) {
+      //     priceFn(node, pageType);
+      //   }
+      // });
+      // everytime a mutation is detected, run the price fn on the entire document
+      priceFn(document.body, pageType);
     });
   });
 
