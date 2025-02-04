@@ -84,63 +84,6 @@ function DOMConvertCurrency(container, priceData) {
   }
 }
 
-function isCOPAmount(text) {
-  // First check if it's USD
-  const usdIndicators = ['usd', 'dollar', 'dollars', 'us$', 'u.s.', 'USD'];
-  const isUSD = usdIndicators.some(indicator => 
-    text.toLowerCase().includes(indicator)
-  );
-
-  const sqFtIndicator = ['sq ft'];
-  const isSqFt = sqFtIndicator.some(indicator => text.toLowerCase().includes(indicator));
-
-  if (isUSD || isSqFt) {
-    return false;
-  }
-
-  // Common non-monetary contexts to exclude
-  const excludePatterns = [
-    /nit:\s*\d/i,           // NIT numbers
-    /\d+\s*#\s*\d/,         // Address formats
-    /@/,                    // Emails
-    /tel[éef]fono/i,        // Phone numbers
-    /\d{3,4}\s*-\s*\d/      // Various ID formats
-  ];
-
-  if (excludePatterns.some(pattern => pattern.test(text))) {
-    return false;
-  }
-
-  // More precise COP indicator matching using word boundaries
-  const copIndicators = [
-    /\bcop\b/i,
-    /\bpeso\b/i,
-    /\bpesos\b/i,
-    /\$/, 
-    /\bCOP\b/
-  ];
-  
-  const hasIndicator = copIndicators.some(pattern => 
-    pattern.test(text)
-  );
-
-  // Updated regex to better match monetary amounts
-  const colombianFormat = /(?:^\$?\s*|\s+)\d{1,3}(?:\.\d{3}){1,3}(?!\d)/;
-  const internationalFormat = /(?:^\$?\s*|\s+)\d{1,3}(?:,\d{3}){1,3}(?!\d)/;
-
-  return hasIndicator && (colombianFormat.test(text) || internationalFormat.test(text));
-}
-
-/** optionally turn this off--use our own conversion rate */
-function highlightExistingUSDPrice(container) {
-  // const usdElement = container.querySelector('.displayConsumerPrice');
-  // if (usdElement && !usdElement.classList.contains('usd-price-highlighted')) {
-  //     usdElement.style.color = '#2E7D32';
-  //     usdElement.style.fontWeight = 'bold';
-  //     usdElement.classList.add('usd-price-highlighted');
-  // }
-}
-
 // substitute listing prices for following sites
 const listingPriceFn = {
   'primaverarealtymedellin': (rootNode, pageType = 'LISTINGS') => {
