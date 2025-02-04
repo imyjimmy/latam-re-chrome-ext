@@ -229,15 +229,7 @@ const listingPriceFn = {
         }
       }
   
-      // let usdAmount = convertCOPtoUSD(priceData.value);
-
-      // if (container.querySelector('.cop-usd-conversion') === null &&
-      //   container.querySelector('.cop-btc-converstion') === null
-      // ) {
-      // //   container.appendChild(createUSDElement(usdAmount));
-      //   console.log('casacol, convert currency!!')
       DOMConvertCurrency(container, priceData);
-      // }
 
       return priceData;
     });

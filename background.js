@@ -9,14 +9,6 @@ const DEFAULT_RATES = {
 
 const BASE_CURRENCY = 'COP';
 
-// no access to urls in background.js without tabs permission
-// let currentUrl = document.URL; // 
-
-// const baseCurrencyForBaseURL = {
-//   'primaverarealtymedellin': 'COP',
-//   'casacol': 'COP',
-// }
-
 async function fetchUsdCopRate() {
   try {
 		const response = await fetch(
