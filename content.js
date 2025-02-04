@@ -75,6 +75,7 @@ function DOMConvertCurrency(container, priceData) {
       container.appendChild(createUSDElement(usdAmount));
     }
   } else if (currency === 'BTC') {
+    console.log('currency is btc, priceData: ', priceData)
     let btcAmt = convertCOPtoBTC(priceData.value);
     parseUtils.removeSpans(container, 'cop-usd-conversion')
     if (container.querySelector('.cop-btc-conversion') === null) {
@@ -242,27 +243,45 @@ const listingPriceFn = {
     });
   },
   'nomadbarrio': (rootNode, pageType = 'LISTINGS') => {
-    console.log('nomadbarrio, pageType:', pageType);
-    const priceElements = Array.from(rootNode.querySelectorAll('.bubble-element.Text'))
+    const priceContainers = Array.from(rootNode.querySelectorAll('.bubble-element.Text'))
       .filter(el => {
         const text = el.textContent.trim();
         return text.startsWith('$') && !text.includes('US$') && !text.includes('(');
       });
 
-    console.log('nomadbarrio priceelements: ', priceElements);
+    if (!priceContainers.length) return [];
 
-    return priceElements.map(el => {
-      const text = el.textContent.trim();
-      return {
-        formattedValue: text,
-        value: parseFloat(text.replace(/[$,]/g, '')),
-        currency: 'COP'
+    return Array.from(priceContainers).map(container => {
+      const priceData = {
+        symbol: '',
+        formattedValue: '',
+        value: 0,
+        currency: '',
+        raw: ''
       };
+  
+      const valueElement = container.textContent.trim();
+      if (valueElement) {
+        priceData.raw = valueElement;
+
+        const match = valueElement.match(/\s*\$?([\d.,]+)/); // nomadbarrio COP prices don't have 'COP' prefix
+        if (match) { 
+          priceData.currency = 'COP';
+          priceData.formattedValue = valueElement
+          priceData.value = parseFloat(match[1].replace(/[.,]/g, ''));
+        }
+      }
+      DOMConvertCurrency(container, priceData);
+      return priceData;
     });
   }
 }
 
-/* A page either has listings or is the individual property page */
+/* A page is either the home page, the listings page or is the individual property page 
+  HOME
+  LISTINGS
+  PROPERTY
+*/
 const pageTypeFn = { 
   'primaverarealtymedellin': (pathName) => { 
     // pathName === 'property' ? 'PROPERTY': 'LISTINGS'
@@ -307,19 +326,17 @@ function getUrlProperties(url) {
   //console.log('loading listingPriceFn')
   priceFn = listingPriceFn[baseUrl];
   let priceData = priceFn(document.body, pageType);
-  console.log(priceData);
   
   // Watch for dynamic content changes
   const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
-      console.log('mutation detected: ', mutation.addedNodes)
       // mutation.addedNodes.forEach((node) => {
       //   if (node.nodeType === Node.ELEMENT_NODE) {
       //     priceFn(node, pageType);
       //   }
       // });
       // everytime a mutation is detected, run the price fn on the entire document
-      priceFn(document.body, pageType);
+      priceData = priceFn(document.body, pageType);
     });
   });
 

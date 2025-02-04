@@ -84,7 +84,7 @@ async function fetchExchangeRate() {
 }
 
 async function getExchangeRate(currency = 'USD') {
-  console.log('BG, getExchangeRate: ', currency);
+  // console.log('BG, getExchangeRate: ', currency);
 	// Check storage for cached rate
 	const data = await chrome.storage.local.get(`exchangeRate_${currency}`);
 	const cached = data[`exchangeRate_${currency}`];
