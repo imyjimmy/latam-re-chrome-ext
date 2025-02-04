@@ -3,8 +3,8 @@ const CACHE_DURATION = 86400000; // 24 hours in milliseconds
 const DEFAULT_RATE = 4360; // Fallback rate if API fails
 
 const DEFAULT_RATES = {
-  'USD': 4360,
-  'BTC': 96022,
+  'USD': 4136,
+  'BTC': 99298,
 };
 
 const BASE_CURRENCY = 'COP';
