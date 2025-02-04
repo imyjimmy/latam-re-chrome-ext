@@ -57,10 +57,11 @@ async function fetchBtcUsdRate() {
   }
 }
 
-async function fetchExchangeRate(targetCurrency = 'USD') {
+async function fetchExchangeRate() {
+	const currency = await chrome.storage.sync.get('selectedCurrency');
 	const usdCopRate = await fetchUsdCopRate();
 
-  if (targetCurrency === 'BTC') {
+  if (currency.selectedCurrency === 'BTC') {
     const btcUsdRate = await fetchBtcUsdRate();
     const rate = btcUsdRate * usdCopRate; 
     /* 
