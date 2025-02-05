@@ -1,6 +1,6 @@
 {
     "manifest_version": 3,
-    "name": "LATAM Real Estate Chrome Extension",
+    "name": "Bitcoin Real Estate",
     "version": "1.0",
     "description": "View Bitcoin prices alongside property listings of LATAM real estate offerings. Available in Colombian Peso (COP)",
     "icons": {
@@ -9,7 +9,7 @@
         "128": "latin-america-128.png",
         "256": "latin-america-256.png"
     },
-    "permissions": ["activeTab", "scripting", "storage", "tabs"],
+    "permissions": ["activeTab", "storage"],
     "action": {
         "default_popup": "popup.html"
     },

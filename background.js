@@ -132,9 +132,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 		
     chrome.storage.sync.set({ selectedCurrency: message.currency });
 
-    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-      chrome.tabs.sendMessage(tabs[0].id, { type: 'CURRENCY_CHANGED', currency: message.currency });
-    });
+		chrome.runtime.sendMessage({ type: 'CURRENCY_CHANGED', currency: message.currency });
 
 		// Or trigger other background operations
 		//updateCurrencySettings(message.currency);

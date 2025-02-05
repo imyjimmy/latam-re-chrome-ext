@@ -1,3 +1,6 @@
+## chrome extension description
+Browse International Real Estate on the Bitcoin Standard. Instantly view Bitcoin prices alongside property listings by automatically converting local real estate prices to BTC. Save time comparing investments across different markets. Available in Colombian Peso (COP) for select websites. To request additional websites, email imyjimmy@gmail.com
+
 ## Use multiple files in chrome ext
 
 // manifest.json
