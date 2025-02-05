@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Bitcoin Real Estate",
-    "version": "1.0",
+    "version": "1.0.1",
     "description": "View Bitcoin prices alongside property listings of LATAM real estate offerings. Available in Colombian Peso (COP)",
     "icons": {
         "16": "latin-america-16.png",
@@ -9,7 +9,10 @@
         "128": "latin-america-128.png",
         "256": "latin-america-256.png"
     },
-    "permissions": ["activeTab", "storage"],
+    "permissions": ["activeTab", "storage", "tabs"],
+    "host_permissions": [
+        "https://api.coingecko.com/*"
+    ],
     "action": {
         "default_popup": "popup.html"
     },

@@ -9,6 +9,8 @@ const DEFAULT_RATES = {
 
 const BASE_CURRENCY = 'COP';
 
+let ports = new Set();
+
 async function fetchUsdCopRate() {
   try {
 		const response = await fetch(
@@ -89,6 +91,18 @@ async function getExchangeRate(currency = 'USD') {
 	return await fetchExchangeRate();
 }
 
+// Handle port connections from content scripts
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name === 'currency-port') {
+    ports.add(port);
+    
+    // Clean up when port disconnects
+    port.onDisconnect.addListener(() => {
+      ports.delete(port);
+    });
+  }
+});
+
 // Listen for installation or update
 chrome.runtime.onInstalled.addListener(() => {
 	// Set default currency
@@ -132,10 +146,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 		
     chrome.storage.sync.set({ selectedCurrency: message.currency });
 
-		chrome.runtime.sendMessage({ type: 'CURRENCY_CHANGED', currency: message.currency });
-
-		// Or trigger other background operations
-		//updateCurrencySettings(message.currency);
+		// Send to all connected content scripts
+    for (let port of ports) {
+      port.postMessage({ type: 'CURRENCY_CHANGED', currency: message.currency });
+    }
+		
     fetchExchangeRate(message.currency);
 	}
 });

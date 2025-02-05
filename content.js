@@ -1,3 +1,5 @@
+const port = chrome.runtime.connect({ name: 'currency-port' });
+
 let currentUrl = document.URL; // 
 let pageType = null; // these will be determined by the url
 let priceFn = null;
@@ -23,14 +25,24 @@ async function getExchangeRate() {
 }
 
 // Listen for currency changes from popup/background
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+// chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+//   if (message.type === 'CURRENCY_CHANGED') {
+//     getExchangeRate().then(res => {
+//       priceFn(document.body, pageType);
+//     }); // Fetch new rate when currency changes
+//     console.log('exchange rate: ', currentExchangeRate)
+//   }
+// });
+
+port.onMessage.addListener((message) => {
   if (message.type === 'CURRENCY_CHANGED') {
     getExchangeRate().then(res => {
       priceFn(document.body, pageType);
-    }); // Fetch new rate when currency changes
+    });
     console.log('exchange rate: ', currentExchangeRate)
   }
 });
+
 
 function formatUSD(amount) {
   return new Intl.NumberFormat('en-US', {
@@ -70,6 +82,7 @@ function createUSDElement(usdAmount) {
 function DOMConvertCurrency(container, priceData) {
   if (currency === 'USD') { 
     let usdAmount = convertCOPtoUSD(priceData.value);
+    console.log('removing btc: ', container)
     parseUtils.removeSpans(container, 'cop-btc-conversion')
     if (container.querySelector('.cop-usd-conversion') === null) {
       container.appendChild(createUSDElement(usdAmount));
@@ -77,6 +90,7 @@ function DOMConvertCurrency(container, priceData) {
   } else if (currency === 'BTC') {
     console.log('currency is btc, priceData: ', priceData)
     let btcAmt = convertCOPtoBTC(priceData.value);
+    console.log('removing usd')
     parseUtils.removeSpans(container, 'cop-usd-conversion')
     if (container.querySelector('.cop-btc-conversion') === null) {
       container.appendChild(createBTCElement(btcAmt))
@@ -178,12 +192,15 @@ const listingPriceFn = {
     });
   },
   'nomadbarrio': (rootNode, pageType = 'LISTINGS') => {
+    console.log('nomadbarrio, pageType:', pageType, rootNode);
+
     const priceContainers = Array.from(rootNode.querySelectorAll('.bubble-element.Text'))
       .filter(el => {
         const text = el.textContent.trim();
-        return text.startsWith('$') && !text.includes('US$') && !text.includes('(');
+        return text.startsWith('$') && !text.includes('(US$');
       });
 
+    console.log('priceContainers: ', priceContainers);
     if (!priceContainers.length) return [];
 
     return Array.from(priceContainers).map(container => {
