@@ -9,7 +9,7 @@
         "128": "latin-america-128.png",
         "256": "latin-america-256.png"
     },
-    "permissions": ["activeTab", "storage", "tabs"],
+    "permissions": ["activeTab", "storage"],
     "host_permissions": [
         "https://api.coingecko.com/*"
     ],
